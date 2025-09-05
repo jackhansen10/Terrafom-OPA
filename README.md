@@ -1,6 +1,17 @@
 # Terraform Secure S3 Bucket Templates
 
+**Author:** Jack Hansen  
+**License:** MIT License (see [LICENSE](LICENSE))  
+**Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
+
 This repository provides a reusable Terraform module for creating a secure-by-default Amazon S3 bucket aligned with SOC 2, PCI DSS, ISO 27001, and NIST CSF best practices, plus an example to get started quickly.
+
+## License & Attribution
+
+This project is licensed under the MIT License. When using this code, please:
+- Include the original copyright notice and license
+- Provide attribution to the original author (Jack Hansen)
+- Link back to this repository when possible
 
 ## Repository Structure
 
