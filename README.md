@@ -17,11 +17,13 @@ This project is licensed under the MIT License. When using this code, please:
 
 - `modules/secure-s3-bucket/` – Reusable module with secure S3 configuration
 - `modules/secure-kms-key/` – Reusable module with secure KMS key configuration
+- `modules/secure-dynamodb/` – Reusable module with secure DynamoDB configuration
 - `modules/logging-bucket/` – Centralized logging bucket module
 - `modules/logging-registry/` – Registry for auto-selecting logging buckets
 - `examples/secure-s3-bucket/` – Example usage that can be applied directly
 - `examples/secure-s3-bucket-with-registry/` – Example with auto-logging bucket selection
 - `examples/secure-kms-key/` – Example KMS key usage
+- `examples/secure-dynamodb/` – Example DynamoDB usage
 
 ## Quickstart
 
@@ -140,6 +142,15 @@ terraform destroy
 - CloudWatch log group for audit trails
 - Configurable deletion window (7-30 days)
 
+### DynamoDB Security
+- Encryption at rest with KMS (customer-managed or AWS-managed keys)
+- Point-in-time recovery enabled by default
+- Continuous backup with configurable retention
+- DynamoDB streams support for real-time data processing
+- Time-to-Live (TTL) support for automatic data expiration
+- Deletion protection to prevent accidental data loss
+- Support for both provisioned and on-demand billing
+
 See individual module READMEs for detailed control mapping to SOC 2, PCI DSS, ISO 27001, and NIST CSF.
 
 ## Centralized Logging
@@ -165,6 +176,7 @@ This will read `../../registry/logging-buckets.json` and automatically pass the 
 
 - `modules/secure-s3-bucket`: Primary secure bucket (SSE-KMS, versioning, lifecycle, TLS-only, encryption-required, optional VPCE restriction) and sends server access logs to the provided logging bucket name.
 - `modules/secure-kms-key`: Secure KMS key with rotation, least-privilege policies, CloudTrail logging, and compliance features.
+- `modules/secure-dynamodb`: Secure DynamoDB table with encryption, backup, point-in-time recovery, deletion protection, and compliance features.
 - `modules/logging-bucket`: Hardened logging target bucket supporting SSE-S3 or SSE-KMS and optional retention.
 - `modules/logging-registry`: Resolves a logging bucket name for the current account and region from a JSON registry file.
 
@@ -200,6 +212,20 @@ terraform show -json tfplan > tfplan.json
 conftest test tfplan.json --policy ../policy
 ```
 
+### DynamoDB Security Validation
+1) Generate a plan JSON:
+```bash
+cd examples/secure-dynamodb
+terraform init
+terraform plan -out tfplan
+terraform show -json tfplan > tfplan.json
+```
+
+2) Validate with Conftest:
+```bash
+conftest test tfplan.json --policy ../policy
+```
+
 ### Direct OPA Evaluation
 ```bash
 # S3 policies
@@ -209,6 +235,10 @@ opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.s3.security.allow
 # KMS policies
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.kms.security.violations"
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.kms.security.allow"
+
+# DynamoDB policies
+opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.dynamodb.security.violations"
+opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.dynamodb.security.allow"
 ```
 
 ## Troubleshooting
@@ -226,3 +256,11 @@ opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.kms.security.allo
 - Deletion window: Keys cannot be deleted immediately; the deletion window provides a safety period.
 - CloudTrail logging: Ensure CloudTrail is configured to log KMS events for audit compliance.
 - Key rotation: Automatic rotation creates new key material while preserving the same key ID and alias.
+
+### DynamoDB Issues
+- Table name must be unique within the region: adjust `table_name` if conflicts occur.
+- Attribute definitions: Ensure all hash keys, range keys, and index keys have corresponding attribute definitions.
+- Capacity planning: For PROVISIONED billing mode, set appropriate read/write capacity based on expected load.
+- Backup retention: Backup retention is limited to 1-35 days; adjust `backup_retention_days` accordingly.
+- Deletion protection: Disable deletion protection before destroying the table, or use `terraform destroy -target` with caution.
+- TTL configuration: When enabling TTL, ensure the specified attribute exists and contains numeric timestamps.
