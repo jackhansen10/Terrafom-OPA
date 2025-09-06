@@ -16,7 +16,12 @@ This project is licensed under the MIT License. When using this code, please:
 ## Repository Structure
 
 - `modules/secure-s3-bucket/` – Reusable module with secure S3 configuration
+- `modules/secure-kms-key/` – Reusable module with secure KMS key configuration
+- `modules/logging-bucket/` – Centralized logging bucket module
+- `modules/logging-registry/` – Registry for auto-selecting logging buckets
 - `examples/secure-s3-bucket/` – Example usage that can be applied directly
+- `examples/secure-s3-bucket-with-registry/` – Example with auto-logging bucket selection
+- `examples/secure-kms-key/` – Example KMS key usage
 
 ## Quickstart
 
@@ -118,6 +123,7 @@ terraform destroy
 
 ## Compliance Features
 
+### S3 Bucket Security
 - Default encryption using a customer-managed KMS key with rotation
 - Public access fully blocked with S3 Public Access Block
 - Versioning enabled; lifecycle retention for noncurrent versions
@@ -125,7 +131,16 @@ terraform destroy
 - TLS-only and KMS-encryption-required bucket policies
 - Optional restriction to specific VPC endpoint IDs
 
-See `modules/secure-s3-bucket/README.md` for more details and control mapping.
+### KMS Key Security
+- Automatic key rotation enabled by default
+- Secure key policy with least privilege access
+- Support for symmetric and asymmetric keys
+- Multi-region key support
+- CloudTrail logging integration
+- CloudWatch log group for audit trails
+- Configurable deletion window (7-30 days)
+
+See individual module READMEs for detailed control mapping to SOC 2, PCI DSS, ISO 27001, and NIST CSF.
 
 ## Centralized Logging
 
@@ -149,6 +164,7 @@ This will read `../../registry/logging-buckets.json` and automatically pass the 
 ## Modules Overview
 
 - `modules/secure-s3-bucket`: Primary secure bucket (SSE-KMS, versioning, lifecycle, TLS-only, encryption-required, optional VPCE restriction) and sends server access logs to the provided logging bucket name.
+- `modules/secure-kms-key`: Secure KMS key with rotation, least-privilege policies, CloudTrail logging, and compliance features.
 - `modules/logging-bucket`: Hardened logging target bucket supporting SSE-S3 or SSE-KMS and optional retention.
 - `modules/logging-registry`: Resolves a logging bucket name for the current account and region from a JSON registry file.
 
@@ -156,6 +172,7 @@ This will read `../../registry/logging-buckets.json` and automatically pass the 
 
 Policies are provided in `policy/` to validate Terraform plans before applying.
 
+### S3 Security Validation
 1) Generate a plan JSON:
 ```bash
 cd examples/secure-s3-bucket
@@ -169,16 +186,43 @@ terraform show -json tfplan > tfplan.json
 conftest test tfplan.json --policy ../policy
 ```
 
-Or with OPA directly:
+### KMS Security Validation
+1) Generate a plan JSON:
 ```bash
+cd examples/secure-kms-key
+terraform init
+terraform plan -out tfplan
+terraform show -json tfplan > tfplan.json
+```
+
+2) Validate with Conftest:
+```bash
+conftest test tfplan.json --policy ../policy
+```
+
+### Direct OPA Evaluation
+```bash
+# S3 policies
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.s3.security.violations"
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.s3.security.allow"
+
+# KMS policies
+opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.kms.security.violations"
+opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.kms.security.allow"
 ```
 
 ## Troubleshooting
 
+### S3 Issues
 - Bucket name must be globally unique: adjust `bucket_name` and `logging_bucket_name`.
 - Logging bucket ACL: S3 server access logging requires the target bucket to have `log-delivery-write` ACL; use `modules/logging-bucket` or ensure equivalent configuration.
 - KMS permissions: Ensure identities writing to the bucket can use the CMK and that the bucket policy enforces the intended CMK.
 - Lifecycle rule warnings: Provider may require a `filter {}` on lifecycle rules. This repo already includes it; if you copy/paste rules, include `filter {}` to apply to all objects.
 - VPCE restriction: If you enable VPCE restriction, ensure callers access S3 via the allowed VPC endpoints.
+
+### KMS Issues
+- Key alias must start with 'alias/': ensure your alias follows AWS naming conventions.
+- Key policy permissions: Verify that principals and services in `allowed_principals` and `allowed_services` have the necessary KMS permissions.
+- Deletion window: Keys cannot be deleted immediately; the deletion window provides a safety period.
+- CloudTrail logging: Ensure CloudTrail is configured to log KMS events for audit compliance.
+- Key rotation: Automatic rotation creates new key material while preserving the same key ID and alias.
