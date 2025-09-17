@@ -109,13 +109,12 @@ deny[msg] {
 }
 
 # Bucket policy must deny insecure transport and unencrypted uploads
-
 deny[msg] {
   some r in bucket_policies
   json := r.change.after.policy
   pd := json.unmarshal(json)
-  # Deny if missing the DenyInsecureTransport statement
-  not some s in pd.Statement; s.Sid == "DenyInsecureTransport"
+  # Check if DenyInsecureTransport statement exists
+  count([s | s := pd.Statement[_]; s.Sid == "DenyInsecureTransport"]) == 0
   msg := "Bucket policy must deny insecure transport (TLS only)"
 }
 
@@ -123,7 +122,8 @@ deny[msg] {
   some r in bucket_policies
   json := r.change.after.policy
   pd := json.unmarshal(json)
-  not some s in pd.Statement; s.Sid == "DenyUnEncryptedObjectUploads"
+  # Check if DenyUnEncryptedObjectUploads statement exists
+  count([s | s := pd.Statement[_]; s.Sid == "DenyUnEncryptedObjectUploads"]) == 0
   msg := "Bucket policy must deny unencrypted uploads (aws:kms with CMK)"
 }
 
@@ -132,10 +132,10 @@ deny[msg] {
   some r in bucket_policies
   json := r.change.after.policy
   pd := json.unmarshal(json)
+  # Check if VPCE restriction statement exists but doesn't enforce aws:sourceVpce
   some s in pd.Statement
   s.Sid == "DenyRequestsNotFromAllowedVPCEndpoints"
-  # If statement exists, ensure it actually restricts by aws:sourceVpce
-  not s.Condition.ForAnyValue:StringNotEquals["aws:sourceVpce"]
+  not s.Condition.ForAnyValue.StringNotEquals["aws:sourceVpce"]
   msg := "Bucket policy VPCE restriction present but not enforcing aws:sourceVpce"
 }
 

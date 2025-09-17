@@ -33,7 +33,7 @@ deny[msg] {
   some r in kms_keys
   after := r.change.after
   deletion_window := after.deletion_window_in_days
-  not (deletion_window >= 7 && deletion_window <= 30)
+  not (deletion_window >= 7 and deletion_window <= 30)
   msg := "KMS key deletion window must be between 7 and 30 days"
 }
 

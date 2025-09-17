@@ -21,7 +21,7 @@ security_groups := {r | some i
 # DENY rules
 
 # Encryption at rest must be enabled
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   not after.storage_encrypted
@@ -29,7 +29,7 @@ deny[msg] {
 }
 
 # Backup retention must be reasonable (at least 1 day for production)
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   retention := after.backup_retention_period
@@ -38,7 +38,7 @@ deny[msg] {
 }
 
 # Deletion protection should be enabled for production
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   not after.deletion_protection
@@ -46,7 +46,7 @@ deny[msg] {
 }
 
 # Final snapshot should not be skipped
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   after.skip_final_snapshot
@@ -54,7 +54,7 @@ deny[msg] {
 }
 
 # Auto minor version upgrade should be enabled
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   not after.auto_minor_version_upgrade
@@ -62,7 +62,7 @@ deny[msg] {
 }
 
 # Performance Insights should be enabled
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   not after.performance_insights_enabled
@@ -70,7 +70,7 @@ deny[msg] {
 }
 
 # Enhanced monitoring should be enabled (monitoring_interval > 0)
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   monitoring := after.monitoring_interval
@@ -79,7 +79,7 @@ deny[msg] {
 }
 
 # DB instance must have a subnet group
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   not after.db_subnet_group_name
@@ -87,7 +87,7 @@ deny[msg] {
 }
 
 # DB subnet group must exist
-deny[msg] {
+deny[msg] if {
   count(db_subnet_groups) == 0
   some r in rds_instances
   after := r.change.after
@@ -96,7 +96,7 @@ deny[msg] {
 }
 
 # Security group must exist
-deny[msg] {
+deny[msg] if {
   count(security_groups) == 0
   some r in rds_instances
   after := r.change.after
@@ -105,7 +105,7 @@ deny[msg] {
 }
 
 # Security group should restrict access (not open to 0.0.0.0/0)
-deny[msg] {
+deny[msg] if {
   some r in security_groups
   after := r.change.after
   some ingress in after.ingress
@@ -114,7 +114,7 @@ deny[msg] {
 }
 
 # Master user password should be managed by Secrets Manager
-deny[msg] {
+deny[msg] if {
   some r in rds_instances
   after := r.change.after
   not after.manage_master_user_password
@@ -124,6 +124,6 @@ deny[msg] {
 # Expose denies and an allow decision
 violations := [m | m := deny[_]]
 
-allow {
+allow if {
   count(violations) == 0
 }

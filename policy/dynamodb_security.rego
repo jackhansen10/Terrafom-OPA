@@ -63,7 +63,7 @@ deny[msg] {
   some r in dynamodb_backups
   after := r.change.after
   retention := after.backup_retention_period
-  not (retention >= 1 && retention <= 35)
+  not (retention >= 1 and retention <= 35)
   msg := "DynamoDB backup retention must be between 1 and 35 days"
 }
 
