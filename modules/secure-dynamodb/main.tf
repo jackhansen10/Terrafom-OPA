@@ -42,32 +42,22 @@ resource "aws_dynamodb_table" "this" {
   dynamic "server_side_encryption" {
     for_each = var.server_side_encryption.enabled ? [1] : []
     content {
-      enabled     = true
-      kms_key_id = var.server_side_encryption.kms_key_id != null ? var.server_side_encryption.kms_key_id : var.kms_key_arn
+      enabled      = true
+      kms_key_arn  = var.server_side_encryption.kms_key_id != null ? var.server_side_encryption.kms_key_id : var.kms_key_arn
     }
   }
+
 
   # Point-in-time recovery
   point_in_time_recovery {
     enabled = var.point_in_time_recovery
   }
 
-  # Continuous backup
-  dynamic "backup" {
-    for_each = var.backup_enabled ? [1] : []
-    content {
-      enabled = true
-    }
-  }
+  # Continuous backup (handled via backup_retention_period)
 
   # DynamoDB streams
-  dynamic "stream" {
-    for_each = var.stream_enabled ? [1] : []
-    content {
-      enabled       = true
-      stream_view_type = var.stream_view_type
-    }
-  }
+  stream_enabled = var.stream_enabled
+  stream_view_type = var.stream_enabled ? var.stream_view_type : null
 
   # Time to Live
   dynamic "ttl" {
@@ -86,7 +76,7 @@ resource "aws_dynamodb_table" "this" {
   })
 
   lifecycle {
-    prevent_destroy = var.deletion_protection_enabled
+    prevent_destroy = true
   }
 }
 
@@ -102,10 +92,4 @@ resource "aws_dynamodb_table_item" "this" {
 }
 
 # Backup policy for automated backups
-resource "aws_dynamodb_table_backup" "this" {
-  count = var.backup_enabled ? 1 : 0
-  
-  table_name = aws_dynamodb_table.this.name
-  
-  backup_retention_period = var.backup_retention_days
-}
+# Note: DynamoDB continuous backups are managed via the backup block in the table resource

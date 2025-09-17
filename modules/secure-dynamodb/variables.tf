@@ -49,7 +49,7 @@ variable "global_secondary_indexes" {
   type = list(object({
     name               = string
     hash_key           = string
-    range_key          = string
+    range_key          = optional(string)
     write_capacity     = number
     read_capacity      = number
     projection_type    = string
