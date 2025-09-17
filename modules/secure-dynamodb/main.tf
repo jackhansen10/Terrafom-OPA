@@ -78,10 +78,7 @@ resource "aws_dynamodb_table" "this" {
     }
   }
 
-  # Deletion protection
-  deletion_protection {
-    enabled = var.deletion_protection_enabled
-  }
+  # Deletion protection (handled via lifecycle)
 
   tags = merge(var.tags, {
     Name = var.table_name

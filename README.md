@@ -18,12 +18,14 @@ This project is licensed under the MIT License. When using this code, please:
 - `modules/secure-s3-bucket/` – Reusable module with secure S3 configuration
 - `modules/secure-kms-key/` – Reusable module with secure KMS key configuration
 - `modules/secure-dynamodb/` – Reusable module with secure DynamoDB configuration
+- `modules/secure-rds/` – Reusable module with secure RDS configuration
 - `modules/logging-bucket/` – Centralized logging bucket module
 - `modules/logging-registry/` – Registry for auto-selecting logging buckets
 - `examples/secure-s3-bucket/` – Example usage that can be applied directly
 - `examples/secure-s3-bucket-with-registry/` – Example with auto-logging bucket selection
 - `examples/secure-kms-key/` – Example KMS key usage
 - `examples/secure-dynamodb/` – Example DynamoDB usage
+- `examples/secure-rds/` – Example RDS usage
 
 ## Quickstart
 
@@ -151,6 +153,16 @@ terraform destroy
 - Deletion protection to prevent accidental data loss
 - Support for both provisioned and on-demand billing
 
+### RDS Security
+- Encryption at rest with KMS (customer-managed or AWS-managed keys)
+- Automated backups with configurable retention
+- Point-in-time recovery support
+- Enhanced monitoring and Performance Insights
+- CloudWatch logs export
+- Deletion protection and final snapshots
+- Password management via AWS Secrets Manager
+- Secure networking with VPC and security groups
+
 See individual module READMEs for detailed control mapping to SOC 2, PCI DSS, ISO 27001, and NIST CSF.
 
 ## Centralized Logging
@@ -177,6 +189,7 @@ This will read `../../registry/logging-buckets.json` and automatically pass the 
 - `modules/secure-s3-bucket`: Primary secure bucket (SSE-KMS, versioning, lifecycle, TLS-only, encryption-required, optional VPCE restriction) and sends server access logs to the provided logging bucket name.
 - `modules/secure-kms-key`: Secure KMS key with rotation, least-privilege policies, CloudTrail logging, and compliance features.
 - `modules/secure-dynamodb`: Secure DynamoDB table with encryption, backup, point-in-time recovery, deletion protection, and compliance features.
+- `modules/secure-rds`: Secure RDS instance with encryption, backup, monitoring, Performance Insights, deletion protection, and compliance features.
 - `modules/logging-bucket`: Hardened logging target bucket supporting SSE-S3 or SSE-KMS and optional retention.
 - `modules/logging-registry`: Resolves a logging bucket name for the current account and region from a JSON registry file.
 
@@ -226,6 +239,20 @@ terraform show -json tfplan > tfplan.json
 conftest test tfplan.json --policy ../policy
 ```
 
+### RDS Security Validation
+1) Generate a plan JSON:
+```bash
+cd examples/secure-rds
+terraform init
+terraform plan -out tfplan
+terraform show -json tfplan > tfplan.json
+```
+
+2) Validate with Conftest:
+```bash
+conftest test tfplan.json --policy ../policy
+```
+
 ### Direct OPA Evaluation
 ```bash
 # S3 policies
@@ -239,6 +266,10 @@ opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.kms.security.allo
 # DynamoDB policies
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.dynamodb.security.violations"
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.dynamodb.security.allow"
+
+# RDS policies
+opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.rds.security.violations"
+opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.rds.security.allow"
 ```
 
 ## Troubleshooting
@@ -264,3 +295,12 @@ opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.dynamodb.security
 - Backup retention: Backup retention is limited to 1-35 days; adjust `backup_retention_days` accordingly.
 - Deletion protection: Disable deletion protection before destroying the table, or use `terraform destroy -target` with caution.
 - TTL configuration: When enabling TTL, ensure the specified attribute exists and contains numeric timestamps.
+
+### RDS Issues
+- Instance identifier must be unique: adjust `identifier` if conflicts occur.
+- Subnet group: Ensure subnet IDs are in different AZs for high availability.
+- Security groups: Verify security group rules allow appropriate database access.
+- Backup retention: Backup retention is limited to 0-35 days; adjust `backup_retention_period` accordingly.
+- Deletion protection: Disable deletion protection before destroying the instance, or use `terraform destroy -target` with caution.
+- Password management: When using Secrets Manager, retrieve passwords from AWS Secrets Manager console or CLI.
+- Performance Insights: Requires additional cost; disable if not needed for compliance.
