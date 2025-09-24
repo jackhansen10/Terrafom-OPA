@@ -1,0 +1,50 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_dynamodb_table.this",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "name": "insecure-dynamodb-table",
+          "billing_mode": "PROVISIONED",
+          "read_capacity": 5,
+          "write_capacity": 5,
+          "hash_key": "id",
+          "attribute": [
+            {
+              "name": "id",
+              "type": "S"
+            }
+          ],
+          "server_side_encryption": {
+            "enabled": false
+          },
+          "point_in_time_recovery": {
+            "enabled": false
+          },
+          "deletion_protection": {
+            "enabled": false
+          },
+          "backup": {
+            "enabled": false
+          },
+          "stream_enabled": false,
+          "ttl": {
+            "enabled": true,
+            "attribute_name": ""
+          },
+          "tags": {
+            "Name": "insecure-dynamodb-table",
+            "Purpose": "insecure-database"
+          }
+        }
+      }
+    }
+  ]
+}
