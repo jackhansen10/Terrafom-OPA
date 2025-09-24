@@ -129,3 +129,4 @@ opa eval -f pretty -d policy/kms_security.rego -i test-plans/kms/insecure/kms-ke
 - Secure configurations follow AWS security best practices
 - Insecure configurations intentionally violate security requirements
 - Use these files to validate OPA policy behavior before applying to real Terraform plans
+
