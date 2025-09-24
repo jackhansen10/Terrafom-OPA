@@ -1,0 +1,96 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.this",
+      "mode": "managed",
+      "type": "aws_db_instance",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "identifier": "insecure-rds-instance",
+          "engine": "postgres",
+          "engine_version": "15.4",
+          "instance_class": "db.t3.micro",
+          "allocated_storage": 20,
+          "storage_type": "gp2",
+          "storage_encrypted": false,
+          "backup_retention_period": 0,
+          "backup_window": "03:00-04:00",
+          "maintenance_window": "sun:04:00-sun:05:00",
+          "deletion_protection": false,
+          "skip_final_snapshot": true,
+          "auto_minor_version_upgrade": false,
+          "performance_insights_enabled": false,
+          "monitoring_interval": 0,
+          "db_subnet_group_name": "insecure-db-subnet-group",
+          "vpc_security_group_ids": ["sg-87654321"],
+          "manage_master_user_password": false,
+          "master_username": "postgres",
+          "master_password": "insecure-password",
+          "parameter_group_name": "default.postgres15",
+          "tags": {
+            "Name": "insecure-rds-instance",
+            "Purpose": "insecure-database"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_db_subnet_group.this",
+      "mode": "managed",
+      "type": "aws_db_subnet_group",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "name": "insecure-db-subnet-group",
+          "subnet_ids": ["subnet-12345678", "subnet-87654321"],
+          "tags": {
+            "Name": "insecure-db-subnet-group"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_security_group.this",
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "name": "insecure-rds-sg",
+          "description": "Security group for insecure RDS instance",
+          "vpc_id": "vpc-12345678",
+          "ingress": [
+            {
+              "from_port": 5432,
+              "to_port": 5432,
+              "protocol": "tcp",
+              "cidr_blocks": ["0.0.0.0/0"],
+              "description": "PostgreSQL access from anywhere"
+            }
+          ],
+          "egress": [
+            {
+              "from_port": 0,
+              "to_port": 0,
+              "protocol": "-1",
+              "cidr_blocks": ["0.0.0.0/0"],
+              "description": "All outbound traffic"
+            }
+          ],
+          "tags": {
+            "Name": "insecure-rds-sg"
+          }
+        }
+      }
+    }
+  ]
+}
