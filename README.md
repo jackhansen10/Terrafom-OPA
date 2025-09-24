@@ -272,6 +272,29 @@ opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.rds.security.viol
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.rds.security.allow"
 ```
 
+### Testing with Sample Plans
+The repository includes sample Terraform plan files for testing OPA policies:
+
+```bash
+# Test S3 policy with sample plans
+opa eval -f pretty -d policy/s3_security.rego -i test-plans/s3/secure/s3-bucket-secure-plan.json "data.terraform.s3.security.allow"
+opa eval -f pretty -d policy/s3_security.rego -i test-plans/s3/insecure/s3-bucket-insecure-plan.json "data.terraform.s3.security.violations"
+
+# Test DynamoDB policy with sample plans
+opa eval -f pretty -d policy/dynamodb_security.rego -i test-plans/dynamodb/secure/dynamodb-table-secure-plan.json "data.terraform.dynamodb.security.allow"
+opa eval -f pretty -d policy/dynamodb_security.rego -i test-plans/dynamodb/insecure/dynamodb-table-insecure-plan.json "data.terraform.dynamodb.security.violations"
+
+# Test RDS policy with sample plans
+opa eval -f pretty -d policy/rds_security.rego -i test-plans/rds/secure/rds-instance-secure-plan.json "data.terraform.rds.security.allow"
+opa eval -f pretty -d policy/rds_security.rego -i test-plans/rds/insecure/rds-instance-insecure-plan.json "data.terraform.rds.security.violations"
+
+# Test KMS policy with sample plans
+opa eval -f pretty -d policy/kms_security.rego -i test-plans/kms/secure/kms-key-secure-plan.json "data.terraform.kms.security.allow"
+opa eval -f pretty -d policy/kms_security.rego -i test-plans/kms/insecure/kms-key-insecure-plan.json "data.terraform.kms.security.violations"
+```
+
+See `test-plans/README.md` for detailed information about the sample plans and expected results.
+
 ## Troubleshooting
 
 ### S3 Issues

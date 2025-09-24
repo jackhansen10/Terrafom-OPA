@@ -1,0 +1,136 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.this",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "insecure-bucket-1234567890",
+          "force_destroy": false,
+          "tags": {
+            "Name": "insecure-bucket-1234567890",
+            "Purpose": "insecure-storage"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_server_side_encryption_configuration.this",
+      "mode": "managed",
+      "type": "aws_s3_bucket_server_side_encryption_configuration",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "insecure-bucket-1234567890",
+          "rule": [
+            {
+              "apply_server_side_encryption_by_default": {
+                "sse_algorithm": "AES256"
+              },
+              "bucket_key_enabled": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_public_access_block.this",
+      "mode": "managed",
+      "type": "aws_s3_bucket_public_access_block",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "insecure-bucket-1234567890",
+          "block_public_acls": false,
+          "block_public_policy": false,
+          "ignore_public_acls": false,
+          "restrict_public_buckets": false
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_ownership_controls.this",
+      "mode": "managed",
+      "type": "aws_s3_bucket_ownership_controls",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "insecure-bucket-1234567890",
+          "rule": [
+            {
+              "object_ownership": "BucketOwnerPreferred"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_versioning.this",
+      "mode": "managed",
+      "type": "aws_s3_bucket_versioning",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "insecure-bucket-1234567890",
+          "versioning_configuration": {
+            "status": "Suspended"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_logging.this",
+      "mode": "managed",
+      "type": "aws_s3_bucket_logging",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "insecure-bucket-1234567890",
+          "target_bucket": "",
+          "target_prefix": ""
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_policy.this",
+      "mode": "managed",
+      "type": "aws_s3_bucket_policy",
+      "name": "this",
+      "provider_name": "aws",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "insecure-bucket-1234567890",
+          "policy": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "AllowPublicRead",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::insecure-bucket-1234567890/*"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
