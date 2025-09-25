@@ -1,10 +1,10 @@
-# Terraform Secure S3 Bucket Templates
+# Terraform Secure Infrastructure Templates
 
 **Author:** Jack Hansen  
 **License:** MIT License (see [LICENSE](LICENSE))  
 **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-This repository provides a reusable Terraform module for creating a secure-by-default Amazon S3 bucket aligned with SOC 2, PCI DSS, ISO 27001, and NIST CSF best practices, plus an example to get started quickly.
+This repository provides reusable Terraform modules for creating secure-by-default AWS infrastructure aligned with SOC 2, PCI DSS, ISO 27001, and NIST CSF best practices. Includes modules for S3, KMS, DynamoDB, RDS, and EKS with comprehensive security validation using OPA and Checkov policies.
 
 ## License & Attribution
 
@@ -60,7 +60,46 @@ terraform plan
 terraform apply
 ```
 
-## How to Deploy Your Own Secure S3 Bucket
+### EKS Cluster Quickstart
+
+1. Clone the repo and change directory:
+
+```bash
+git clone <your-repo-url>
+cd Terrafom-OPA/examples/secure-eks
+```
+
+2. Provide values (either via CLI or `terraform.tfvars`):
+
+```hcl
+aws_region      = "us-east-1"
+cluster_name    = "my-secure-eks-cluster"
+cluster_version = "1.28"
+environment     = "production"
+project_name    = "my-project"
+```
+
+3. Initialize and apply:
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+This creates a fully secure EKS cluster with:
+- Encryption at rest using AWS KMS
+- Private endpoint access only
+- Complete audit logging
+- Security groups with least privilege
+- OIDC provider for IRSA
+- AWS Load Balancer Controller
+- CloudWatch Container Insights
+- Pod Security Standards
+- Network Policies
+- Resource Quotas
+
+## How to Deploy Your Own Secure Infrastructure
 
 ### Option A: Use the included example (recommended to start)
 
@@ -71,10 +110,9 @@ terraform apply
 3. Run `terraform init && terraform apply`.
 4. Outputs will show your bucket and KMS ARNs.
 
-### Option B: Consume the module from another root
+### Option B: Consume modules from another root
 
-Create a new directory (or use an existing Terraform root) and add:
-
+**S3 Bucket Example:**
 ```hcl
 terraform {
   required_version = ">= 1.5.0"
@@ -110,11 +148,93 @@ variable "bucket_name" { type = string }
 variable "logging_bucket_name" { type = string }
 ```
 
+**EKS Cluster Example:**
+```hcl
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.20"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+variable "aws_region" { type = string }
+
+# VPC for EKS cluster
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
+
+  name = "${var.cluster_name}-vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  enable_dns_hostnames = true
+  enable_dns_support = true
+}
+
+module "secure_eks" {
+  source = "github.com/your-org/your-repo//modules/secure-eks?ref=v1.0.0"
+
+  cluster_name    = var.cluster_name
+  cluster_version = var.cluster_version
+  
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+  
+  enable_cluster_encryption = true
+  enable_audit_logging      = true
+  enable_cloudwatch_logging = true
+  
+  node_groups = {
+    main = {
+      instance_types = ["t3.medium"]
+      min_size      = 2
+      max_size      = 10
+      desired_size  = 3
+    }
+  }
+  
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+variable "cluster_name" { type = string }
+variable "cluster_version" { type = string }
+variable "environment" { type = string }
+variable "project_name" { type = string }
+```
+
 Then run:
 
 ```bash
+# For S3
 terraform init
 terraform apply -var "aws_region=us-east-1" -var "bucket_name=my-unique-bucket" -var "logging_bucket_name=my-unique-bucket-logs"
+
+# For EKS
+terraform init
+terraform apply -var "aws_region=us-east-1" -var "cluster_name=my-secure-eks" -var "cluster_version=1.28" -var "environment=prod" -var "project_name=my-project"
 ```
 
 ### Passing variables
@@ -505,12 +625,18 @@ jobs:
 - Performance Insights: Requires additional cost; disable if not needed for compliance.
 
 ### EKS Issues
-- Cluster name must be unique: adjust `cluster_name` if conflicts occur.
-- Subnet configuration: Ensure at least 2 subnets in different AZs for high availability.
-- Security groups: Verify security group rules allow appropriate cluster and node communication.
-- Node group scaling: Ensure `min_size` is at least 2 for high availability.
-- External modules: Use `--download-external-modules true` flag with Checkov for VPC module analysis.
-- OIDC provider: Ensure OIDC provider is created before using IRSA (IAM Roles for Service Accounts).
-- Load balancer controller: Install AWS Load Balancer Controller for production workloads.
-- Pod Security Standards: Configure appropriate security contexts for workloads.
-- Network policies: Implement network policies to restrict pod-to-pod communication.
+- **Cluster name must be unique**: Adjust `cluster_name` if conflicts occur.
+- **Subnet configuration**: Ensure at least 2 subnets in different AZs for high availability.
+- **Security groups**: Verify security group rules allow appropriate cluster and node communication.
+- **Node group scaling**: Ensure `min_size` is at least 2 for high availability.
+- **External modules**: Use `--download-external-modules true` flag with Checkov for VPC module analysis.
+- **OIDC provider**: Ensure OIDC provider is created before using IRSA (IAM Roles for Service Accounts).
+- **Load balancer controller**: Install AWS Load Balancer Controller for production workloads.
+- **Pod Security Standards**: Configure appropriate security contexts for workloads.
+- **Network policies**: Implement network policies to restrict pod-to-pod communication.
+- **Helm provider**: Ensure Helm provider is properly configured for addon management.
+- **Kubernetes provider**: Configure Kubernetes provider with cluster endpoint and auth.
+- **VPC requirements**: EKS requires VPC with DNS support and hostnames enabled.
+- **IAM permissions**: Ensure sufficient permissions for EKS service role and node group role.
+- **Addon conflicts**: Some addons may conflict; use `resolve_conflicts` parameter if needed.
+- **PodSecurityPolicy deprecation**: Use Pod Security Standards for Kubernetes 1.21+ clusters.
