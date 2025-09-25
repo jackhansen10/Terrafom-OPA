@@ -53,6 +53,24 @@ This directory contains Checkov policies that mirror the security checks impleme
 - **CKV_AWS_KMS_ALIAS_PREFIX**: Ensures alias starts with 'alias/'
 - **CKV_AWS_CLOUDWATCH_LOG_GROUP_RETENTION**: Validates log retention period
 
+### EKS Security Policies (`eks_security.py`)
+- **CKV_AWS_EKS_CLUSTER_ENCRYPTION_AT_REST**: Ensures EKS cluster has encryption at rest enabled
+- **CKV_AWS_EKS_CLUSTER_PRIVATE_ENDPOINT**: Validates private endpoint access only
+- **CKV_AWS_EKS_CLUSTER_NO_PUBLIC_CIDRS**: Ensures no public access CIDRs
+- **CKV_AWS_EKS_CLUSTER_AUDIT_LOGGING**: Validates audit logging is enabled
+- **CKV_AWS_EKS_CLUSTER_API_LOGGING**: Ensures API server logging is enabled
+- **CKV_AWS_EKS_CLUSTER_AUTHENTICATOR_LOGGING**: Validates authenticator logging
+- **CKV_AWS_EKS_CLUSTER_CONTROLLER_MANAGER_LOGGING**: Ensures controller manager logging
+- **CKV_AWS_EKS_CLUSTER_SCHEDULER_LOGGING**: Validates scheduler logging
+- **CKV_AWS_EKS_CLUSTER_SECURITY_GROUP**: Ensures security group is configured
+- **CKV_AWS_EKS_CLUSTER_VERSION**: Validates latest supported Kubernetes version
+- **CKV_AWS_EKS_NODE_GROUP_CAPACITY_TYPE**: Ensures ON_DEMAND capacity type
+- **CKV_AWS_EKS_NODE_GROUP_UPDATE_CONFIG**: Validates update configuration exists
+- **CKV_AWS_EKS_NODE_GROUP_MAX_UNAVAILABLE_PERCENTAGE**: Ensures proper update limits
+- **CKV_AWS_EKS_NODE_GROUP_MIN_SIZE**: Validates minimum 2 nodes
+- **CKV_AWS_EKS_NODE_GROUP_MAX_SIZE**: Ensures maximum node limit
+- **CKV_AWS_EKS_CLUSTER_SUBNET_COUNT**: Validates proper subnet configuration
+
 ## Usage
 
 ### Prerequisites
@@ -107,6 +125,7 @@ Each Checkov policy corresponds to a specific violation check in the OPA policie
 | `s3_security.rego` | `s3_security.py` | S3 bucket security configurations |
 | `dynamodb_security.rego` | `dynamodb_security.py` | DynamoDB table security configurations |
 | `kms_security.rego` | `kms_security.py` | KMS key security configurations |
+| `eks_security.rego` | `eks_security.py` | EKS cluster security configurations |
 
 ## Differences from OPA Policies
 

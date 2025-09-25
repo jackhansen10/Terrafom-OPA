@@ -31,4 +31,14 @@ cd ../secure-kms-key
 checkov -d . --framework terraform --external-checks-dir ../../checkov-policies/ --check CKV_AWS_KMS_ --output cli
 echo ""
 
+echo "Testing secure EKS example..."
+cd ../secure-eks
+checkov -d . --framework terraform --external-checks-dir ../../checkov-policies/ --download-external-modules true --check CKV_AWS_EKS_ --output cli
+echo ""
+
+echo "Testing insecure EKS example..."
+cd ../insecure-eks
+checkov -d . --framework terraform --external-checks-dir ../../checkov-policies/ --download-external-modules true --check CKV_AWS_EKS_ --output cli
+echo ""
+
 echo "All examples tested!"
