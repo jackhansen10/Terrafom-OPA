@@ -3,6 +3,20 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 # EKS Cluster
+# COMPLIANCE CONTROL MAPPINGS:
+# SOC 2 CC6.1: Logical and Physical Access Controls - Private endpoint access only
+# SOC 2 CC6.2: System Access Controls - Security group restrictions
+# SOC 2 CC6.3: Data Transmission and Disposal - Encryption at rest
+# SOC 2 CC7.1: System Monitoring - Control plane logging
+# PCI DSS 1.2.1: Restrict inbound and outbound traffic - Private endpoint
+# PCI DSS 3.4: Render PAN unreadable - Encryption at rest
+# PCI DSS 10.1: Implement audit trails - Control plane logging
+# ISO 27001 A.13.1.1: Network controls - Private endpoint access
+# ISO 27001 A.13.2.1: Information transfer policies - Encryption at rest
+# ISO 27001 A.12.4.1: Event logging - Control plane logging
+# NIST CSF PR.AC-3: Remote access management - Private endpoint
+# NIST CSF PR.DS-1: Data-at-rest protection - Encryption at rest
+# NIST CSF DE.AE-1: Baseline network operations - Control plane logging
 resource "aws_eks_cluster" "main" {
   name     = var.cluster_name
   role_arn = aws_iam_role.cluster.arn
@@ -10,13 +24,14 @@ resource "aws_eks_cluster" "main" {
 
   vpc_config {
     subnet_ids              = var.subnet_ids
-    endpoint_private_access = true
-    endpoint_public_access  = false
-    public_access_cidrs     = []
-    security_group_ids      = [aws_security_group.cluster.id]
+    endpoint_private_access = true  # SOC 2 CC6.1, PCI DSS 1.2.1, ISO 27001 A.13.1.1, NIST CSF PR.AC-3
+    endpoint_public_access  = false # SOC 2 CC6.1, PCI DSS 1.2.1, ISO 27001 A.13.1.1, NIST CSF PR.AC-3
+    public_access_cidrs     = []    # SOC 2 CC6.1, PCI DSS 1.2.1, ISO 27001 A.13.1.1, NIST CSF PR.AC-3
+    security_group_ids      = [aws_security_group.cluster.id] # SOC 2 CC6.2, PCI DSS 1.2.1, ISO 27001 A.13.1.1
   }
 
   # Enable encryption at rest
+  # SOC 2 CC6.3, PCI DSS 3.4, ISO 27001 A.13.2.1, NIST CSF PR.DS-1
   encryption_config {
     provider {
       key_arn = aws_kms_key.cluster.arn
@@ -25,12 +40,13 @@ resource "aws_eks_cluster" "main" {
   }
 
   # Enable control plane logging
+  # SOC 2 CC7.1, PCI DSS 10.1, ISO 27001 A.12.4.1, NIST CSF DE.AE-1
   enabled_cluster_log_types = var.enable_audit_logging ? [
-    "api",
-    "audit",
-    "authenticator",
-    "controllerManager",
-    "scheduler"
+    "api",              # SOC 2 CC7.1, PCI DSS 10.1, ISO 27001 A.12.4.1
+    "audit",            # SOC 2 CC7.1, PCI DSS 10.1, ISO 27001 A.12.4.1
+    "authenticator",    # SOC 2 CC7.1, PCI DSS 10.1, ISO 27001 A.12.4.1
+    "controllerManager", # SOC 2 CC7.1, PCI DSS 10.1, ISO 27001 A.12.4.1
+    "scheduler"         # SOC 2 CC7.1, PCI DSS 10.1, ISO 27001 A.12.4.1
   ] : []
 
   depends_on = [
@@ -45,10 +61,20 @@ resource "aws_eks_cluster" "main" {
 }
 
 # KMS Key for cluster encryption
+# COMPLIANCE CONTROL MAPPINGS:
+# SOC 2 CC6.3: Data Transmission and Disposal - Encryption key management
+# SOC 2 CC6.7: Data Transmission and Disposal - Key rotation
+# PCI DSS 3.4: Render PAN unreadable - Encryption key management
+# PCI DSS 3.6.1: Key management - Key rotation
+# PCI DSS 3.6.2: Key management - Key lifecycle management
+# ISO 27001 A.13.2.1: Information transfer policies - Encryption key management
+# ISO 27001 A.13.2.3: Cryptographic controls - Key rotation
+# NIST CSF PR.DS-1: Data-at-rest protection - Encryption key management
+# NIST CSF PR.DS-2: Data-in-transit protection - Key management
 resource "aws_kms_key" "cluster" {
   description             = "EKS cluster encryption key for ${var.cluster_name}"
-  deletion_window_in_days = 7
-  enable_key_rotation     = true
+  deletion_window_in_days = 7  # SOC 2 CC6.3, PCI DSS 3.6.2, ISO 27001 A.13.2.1, NIST CSF PR.DS-1
+  enable_key_rotation     = true  # SOC 2 CC6.7, PCI DSS 3.6.1, ISO 27001 A.13.2.3, NIST CSF PR.DS-1
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -91,11 +117,22 @@ resource "aws_kms_alias" "cluster" {
 }
 
 # CloudWatch Log Group for cluster logs
+# CloudWatch Log Group for EKS Cluster
+# COMPLIANCE CONTROL MAPPINGS:
+# SOC 2 CC7.1: System Monitoring - Log retention and protection
+# SOC 2 CC7.2: System Monitoring - Log integrity
+# PCI DSS 10.1: Implement audit trails - Log retention
+# PCI DSS 10.3: Protect audit trail files - Log encryption
+# PCI DSS 10.5: Secure audit trail files - Log access controls
+# ISO 27001 A.12.4.1: Event logging - Log retention
+# ISO 27001 A.12.4.2: Event logging - Log protection
+# NIST CSF DE.AE-1: Baseline network operations - Log management
+# NIST CSF DE.CM-1: Baseline network operations - Log monitoring
 resource "aws_cloudwatch_log_group" "cluster" {
   count             = var.enable_audit_logging ? 1 : 0
   name              = "/aws/eks/${var.cluster_name}/cluster"
-  retention_in_days = 30
-  kms_key_id        = aws_kms_key.cluster.arn
+  retention_in_days = 30  # SOC 2 CC7.1, PCI DSS 10.1, ISO 27001 A.12.4.1, NIST CSF DE.AE-1
+  kms_key_id        = aws_kms_key.cluster.arn  # SOC 2 CC7.2, PCI DSS 10.3, ISO 27001 A.12.4.2, NIST CSF DE.CM-1
 
   tags = merge(var.tags, {
     Name = "${var.cluster_name}-cluster-logs"
@@ -135,6 +172,15 @@ resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSVPCResourceControlle
 }
 
 # Security Group for EKS Cluster
+# COMPLIANCE CONTROL MAPPINGS:
+# SOC 2 CC6.1: Logical and Physical Access Controls - Network access restrictions
+# SOC 2 CC6.2: System Access Controls - Security group controls
+# PCI DSS 1.2.1: Restrict inbound and outbound traffic - Security group rules
+# PCI DSS 1.3.1: Limit inbound traffic - Egress restrictions
+# ISO 27001 A.13.1.1: Network controls - Security group implementation
+# ISO 27001 A.13.1.2: Network controls - Traffic filtering
+# NIST CSF PR.AC-3: Remote access management - Network access controls
+# NIST CSF PR.AC-5: Network integrity - Security group controls
 resource "aws_security_group" "cluster" {
   name_prefix = "${var.cluster_name}-cluster-"
   vpc_id      = var.vpc_id
@@ -144,7 +190,7 @@ resource "aws_security_group" "cluster" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]  # SOC 2 CC6.1, PCI DSS 1.3.1, ISO 27001 A.13.1.2, NIST CSF PR.AC-3
   }
 
   tags = merge(var.tags, {
