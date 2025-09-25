@@ -1,0 +1,285 @@
+{
+  "format_version": "1.0",
+  "terraform_version": "1.6.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_eks_cluster.insecure",
+          "mode": "managed",
+          "type": "aws_eks_cluster",
+          "name": "insecure",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "name": "insecure-eks-cluster",
+            "version": "1.20",
+            "role_arn": "arn:aws:iam::123456789012:role/insecure-eks-cluster-role",
+            "vpc_config": [
+              {
+                "subnet_ids": [
+                  "subnet-11111111",
+                  "subnet-22222222"
+                ],
+                "endpoint_private_access": false,
+                "endpoint_public_access": true,
+                "public_access_cidrs": [
+                  "0.0.0.0/0"
+                ]
+              }
+            ],
+            "tags": {
+              "Environment": "development",
+              "Project": "insecure-kubernetes"
+            }
+          }
+        },
+        {
+          "address": "aws_eks_node_group.insecure",
+          "mode": "managed",
+          "type": "aws_eks_node_group",
+          "name": "insecure",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "cluster_name": "insecure-eks-cluster",
+            "node_group_name": "insecure-nodes",
+            "node_role_arn": "arn:aws:iam::123456789012:role/insecure-eks-cluster-nodes-role",
+            "subnet_ids": [
+              "subnet-11111111",
+              "subnet-22222222"
+            ],
+            "instance_types": [
+              "t3.large"
+            ],
+            "capacity_type": "SPOT",
+            "scaling_config": [
+              {
+                "desired_size": 1,
+                "max_size": 200,
+                "min_size": 1
+              }
+            ],
+            "tags": {
+              "Environment": "development",
+              "Project": "insecure-kubernetes"
+            }
+          }
+        },
+        {
+          "address": "aws_security_group.insecure",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "insecure",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "name_prefix": "insecure-eks-cluster-insecure-",
+            "vpc_id": "vpc-11111111",
+            "description": "Insecure security group for EKS cluster",
+            "ingress": [
+              {
+                "from_port": 0,
+                "to_port": 0,
+                "protocol": "-1",
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ]
+              }
+            ],
+            "egress": [
+              {
+                "from_port": 0,
+                "to_port": 0,
+                "protocol": "-1",
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ]
+              }
+            ],
+            "tags": {
+              "Environment": "development",
+              "Project": "insecure-kubernetes"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "aws_eks_cluster.insecure",
+      "mode": "managed",
+      "type": "aws_eks_cluster",
+      "name": "insecure",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "name": "insecure-eks-cluster",
+          "version": "1.20",
+          "role_arn": "arn:aws:iam::123456789012:role/insecure-eks-cluster-role",
+          "vpc_config": [
+            {
+              "subnet_ids": [
+                "subnet-11111111",
+                "subnet-22222222"
+              ],
+              "endpoint_private_access": false,
+              "endpoint_public_access": true,
+              "public_access_cidrs": [
+                "0.0.0.0/0"
+              ]
+            }
+          ],
+          "tags": {
+            "Environment": "development",
+            "Project": "insecure-kubernetes"
+          }
+        },
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_eks_node_group.insecure",
+      "mode": "managed",
+      "type": "aws_eks_node_group",
+      "name": "insecure",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "cluster_name": "insecure-eks-cluster",
+          "node_group_name": "insecure-nodes",
+          "node_role_arn": "arn:aws:iam::123456789012:role/insecure-eks-cluster-nodes-role",
+          "subnet_ids": [
+            "subnet-11111111",
+            "subnet-22222222"
+          ],
+          "instance_types": [
+            "t3.large"
+          ],
+          "capacity_type": "SPOT",
+          "scaling_config": [
+            {
+              "desired_size": 1,
+              "max_size": 200,
+              "min_size": 1
+            }
+          ],
+          "tags": {
+            "Environment": "development",
+            "Project": "insecure-kubernetes"
+          }
+        },
+        "after_unknown": {}
+      }
+    },
+    {
+      "address": "aws_security_group.insecure",
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "insecure",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "name_prefix": "insecure-eks-cluster-insecure-",
+          "vpc_id": "vpc-11111111",
+          "description": "Insecure security group for EKS cluster",
+          "ingress": [
+            {
+              "from_port": 0,
+              "to_port": 0,
+              "protocol": "-1",
+              "cidr_blocks": [
+                "0.0.0.0/0"
+              ]
+            }
+          ],
+          "egress": [
+            {
+              "from_port": 0,
+              "to_port": 0,
+              "protocol": "-1",
+              "cidr_blocks": [
+                "0.0.0.0/0"
+              ]
+            }
+          ],
+          "tags": {
+            "Environment": "development",
+            "Project": "insecure-kubernetes"
+          }
+        },
+        "after_unknown": {}
+      }
+    }
+  ],
+  "configuration": {
+    "provider_config": {
+      "aws": {
+        "name": "aws",
+        "expressions": {
+          "region": {
+            "constant_value": "us-west-2"
+          }
+        }
+      }
+    },
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_eks_cluster.insecure",
+          "mode": "managed",
+          "type": "aws_eks_cluster",
+          "name": "insecure",
+          "provider_config_key": "aws",
+          "expressions": {
+            "name": {
+              "constant_value": "insecure-eks-cluster"
+            },
+            "version": {
+              "constant_value": "1.20"
+            },
+            "role_arn": {
+              "references": [
+                "aws_iam_role.cluster.arn"
+              ]
+            },
+            "vpc_config": {
+              "constant_value": [
+                {
+                  "subnet_ids": [
+                    "subnet-11111111",
+                    "subnet-22222222"
+                  ],
+                  "endpoint_private_access": false,
+                  "endpoint_public_access": true,
+                  "public_access_cidrs": [
+                    "0.0.0.0/0"
+                  ]
+                }
+              ]
+            },
+            "tags": {
+              "constant_value": {
+                "Environment": "development",
+                "Project": "insecure-kubernetes"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -58,6 +58,26 @@ from checkov_policies.kms_security import (
     CloudWatchLogGroupRetention
 )
 
+# EKS Security Policies
+from checkov_policies.eks_security import (
+    EKSClusterEncryptionAtRest,
+    EKSClusterPrivateEndpoint,
+    EKSClusterNoPublicCIDRs,
+    EKSClusterAuditLogging,
+    EKSClusterAPILogging,
+    EKSClusterAuthenticatorLogging,
+    EKSClusterControllerManagerLogging,
+    EKSClusterSchedulerLogging,
+    EKSClusterSecurityGroup,
+    EKSClusterVersion,
+    EKSNodeGroupCapacityType,
+    EKSNodeGroupUpdateConfig,
+    EKSNodeGroupMaxUnavailablePercentage,
+    EKSNodeGroupMinSize,
+    EKSNodeGroupMaxSize,
+    EKSClusterSubnetCount
+)
+
 # Register all policies
 REGISTRY = [
     # RDS Policies
@@ -107,5 +127,23 @@ REGISTRY = [
     KMSKeyPolicyNoWildcardAccess(),
     KMSAliasDefined(),
     KMSAliasPrefix(),
-    CloudWatchLogGroupRetention()
+    CloudWatchLogGroupRetention(),
+    
+    # EKS Policies
+    EKSClusterEncryptionAtRest(),
+    EKSClusterPrivateEndpoint(),
+    EKSClusterNoPublicCIDRs(),
+    EKSClusterAuditLogging(),
+    EKSClusterAPILogging(),
+    EKSClusterAuthenticatorLogging(),
+    EKSClusterControllerManagerLogging(),
+    EKSClusterSchedulerLogging(),
+    EKSClusterSecurityGroup(),
+    EKSClusterVersion(),
+    EKSNodeGroupCapacityType(),
+    EKSNodeGroupUpdateConfig(),
+    EKSNodeGroupMaxUnavailablePercentage(),
+    EKSNodeGroupMinSize(),
+    EKSNodeGroupMaxSize(),
+    EKSClusterSubnetCount()
 ]
