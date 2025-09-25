@@ -1,21 +1,3 @@
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = ">= 2.20"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = ">= 2.0"
-    }
-  }
-}
-
 # Data sources
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
@@ -513,7 +495,6 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   cluster_name      = aws_eks_cluster.main.name
   addon_name        = "amazon-cloudwatch-observability"
   addon_version     = "v1.0.0-eksbuild.1"
-  resolve_conflicts = "OVERWRITE"
 
   depends_on = [aws_eks_node_group.main]
 

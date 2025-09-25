@@ -1,13 +1,3 @@
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0"
-    }
-  }
-}
-
 provider "aws" {
   region = var.aws_region
 }
@@ -43,7 +33,7 @@ module "secure_eks" {
   cluster_version = var.cluster_version
   
   vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnet_ids
+  subnet_ids = module.vpc.private_subnets
   
   # Security configurations
   enable_cluster_encryption = true
@@ -108,25 +98,24 @@ resource "helm_release" "aws_load_balancer_controller" {
   namespace  = "kube-system"
   version    = "1.6.2"
 
-  set {
-    name  = "clusterName"
-    value = module.secure_eks.cluster_id
-  }
-
-  set {
-    name  = "serviceAccount.create"
-    value = "false"
-  }
-
-  set {
-    name  = "serviceAccount.name"
-    value = "aws-load-balancer-controller"
-  }
-
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.secure_eks.aws_load_balancer_controller_role_arn
-  }
+  set = [
+    {
+      name  = "clusterName"
+      value = module.secure_eks.cluster_id
+    },
+    {
+      name  = "serviceAccount.create"
+      value = "false"
+    },
+    {
+      name  = "serviceAccount.name"
+      value = "aws-load-balancer-controller"
+    },
+    {
+      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+      value = module.secure_eks.aws_load_balancer_controller_role_arn
+    }
+  ]
 
   depends_on = [module.secure_eks]
 }
@@ -142,7 +131,9 @@ resource "kubernetes_service_account" "aws_load_balancer_controller" {
   }
 }
 
-# Pod Security Policy
+# Pod Security Standards (replaces deprecated PodSecurityPolicy)
+# Note: PodSecurityPolicy is deprecated in Kubernetes 1.21+ and removed in 1.25+
+# Use Pod Security Standards instead for newer Kubernetes versions
 resource "kubernetes_pod_security_policy" "restricted" {
   metadata {
     name = "restricted"
@@ -163,6 +154,14 @@ resource "kubernetes_pod_security_policy" "restricted" {
     }
 
     fs_group {
+      rule = "MustRunAs"
+      range {
+        min = 1
+        max = 65535
+      }
+    }
+
+    supplemental_groups {
       rule = "MustRunAs"
       range {
         min = 1
