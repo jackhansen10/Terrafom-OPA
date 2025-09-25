@@ -60,182 +60,70 @@ terraform plan
 terraform apply
 ```
 
-### EKS Cluster Quickstart
-
-1. Clone the repo and change directory:
-
-```bash
-git clone <your-repo-url>
-cd Terrafom-OPA/examples/secure-eks
-```
-
-2. Provide values (either via CLI or `terraform.tfvars`):
-
-```hcl
-aws_region      = "us-east-1"
-cluster_name    = "my-secure-eks-cluster"
-cluster_version = "1.28"
-environment     = "production"
-project_name    = "my-project"
-```
-
-3. Initialize and apply:
-
-```bash
-terraform init
-terraform plan
-terraform apply
-```
-
-This creates a fully secure EKS cluster with:
-- Encryption at rest using AWS KMS
-- Private endpoint access only
-- Complete audit logging
-- Security groups with least privilege
-- OIDC provider for IRSA
-- AWS Load Balancer Controller
-- CloudWatch Container Insights
-- Pod Security Standards
-- Network Policies
-- Resource Quotas
-
 ## How to Deploy Your Own Secure Infrastructure
 
-### Option A: Use the included example (recommended to start)
+### Option A: Use the included examples (recommended to start)
 
 1. Ensure AWS credentials are configured (one of):
    - Environment vars: `AWS_PROFILE` or `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` (+ `AWS_SESSION_TOKEN` if using MFA)
    - Or `~/.aws/credentials` with a named profile
-2. In `examples/secure-s3-bucket`, set inputs via `terraform.tfvars` or CLI `-var` flags.
-3. Run `terraform init && terraform apply`.
-4. Outputs will show your bucket and KMS ARNs.
+
+2. Choose your service and navigate to the example directory:
+   - **S3**: `examples/secure-s3-bucket/`
+   - **KMS**: `examples/secure-kms-key/`
+   - **DynamoDB**: `examples/secure-dynamodb/`
+   - **RDS**: `examples/secure-rds/`
+   - **EKS**: `examples/secure-eks/`
+
+3. Set inputs via `terraform.tfvars` or CLI `-var` flags, then run `terraform init && terraform apply`.
+
+4. Outputs will show your resource ARNs and connection details.
 
 ### Option B: Consume modules from another root
 
-**S3 Bucket Example:**
+Create a new directory (or use an existing Terraform root) and add the appropriate module:
+
+**S3 Bucket:**
 ```hcl
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
-variable "aws_region" { type = string }
-
 module "secure_bucket" {
   source = "github.com/your-org/your-repo//modules/secure-s3-bucket?ref=v1.0.0"
-
-  bucket_name                     = var.bucket_name
-  logging_bucket_name             = var.logging_bucket_name
-  kms_key_alias                   = "alias/my-secure-bucket-kms"
-  restrict_to_vpc_endpoint_ids    = []
-
-  tags = {
-    Environment = "prod"
-    Owner       = "security"
-  }
+  # ... module configuration
 }
-
-variable "bucket_name" { type = string }
-variable "logging_bucket_name" { type = string }
 ```
 
-**EKS Cluster Example:**
+**KMS Key:**
 ```hcl
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = ">= 2.20"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = ">= 2.0"
-    }
-  }
+module "secure_kms" {
+  source = "github.com/your-org/your-repo//modules/secure-kms-key?ref=v1.0.0"
+  # ... module configuration
 }
+```
 
-provider "aws" {
-  region = var.aws_region
+**DynamoDB Table:**
+```hcl
+module "secure_dynamodb" {
+  source = "github.com/your-org/your-repo//modules/secure-dynamodb?ref=v1.0.0"
+  # ... module configuration
 }
+```
 
-variable "aws_region" { type = string }
-
-# VPC for EKS cluster
-module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.0"
-
-  name = "${var.cluster_name}-vpc"
-  cidr = "10.0.0.0/16"
-
-  azs             = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-
-  enable_nat_gateway = true
-  enable_dns_hostnames = true
-  enable_dns_support = true
+**RDS Instance:**
+```hcl
+module "secure_rds" {
+  source = "github.com/your-org/your-repo//modules/secure-rds?ref=v1.0.0"
+  # ... module configuration
 }
+```
 
+**EKS Cluster:**
+```hcl
 module "secure_eks" {
   source = "github.com/your-org/your-repo//modules/secure-eks?ref=v1.0.0"
-
-  cluster_name    = var.cluster_name
-  cluster_version = var.cluster_version
-  
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
-  
-  enable_cluster_encryption = true
-  enable_audit_logging      = true
-  enable_cloudwatch_logging = true
-  
-  node_groups = {
-    main = {
-      instance_types = ["t3.medium"]
-      min_size      = 2
-      max_size      = 10
-      desired_size  = 3
-    }
-  }
-  
-  tags = {
-    Environment = var.environment
-    Project     = var.project_name
-  }
+  # ... module configuration
 }
-
-variable "cluster_name" { type = string }
-variable "cluster_version" { type = string }
-variable "environment" { type = string }
-variable "project_name" { type = string }
 ```
 
-Then run:
-
-```bash
-# For S3
-terraform init
-terraform apply -var "aws_region=us-east-1" -var "bucket_name=my-unique-bucket" -var "logging_bucket_name=my-unique-bucket-logs"
-
-# For EKS
-terraform init
-terraform apply -var "aws_region=us-east-1" -var "cluster_name=my-secure-eks" -var "cluster_version=1.28" -var "environment=prod" -var "project_name=my-project"
-```
+Then run `terraform init && terraform apply` with appropriate variables.
 
 ### Passing variables
 
@@ -328,6 +216,7 @@ This will read `../../registry/logging-buckets.json` and automatically pass the 
 - `modules/secure-kms-key`: Secure KMS key with rotation, least-privilege policies, CloudTrail logging, and compliance features.
 - `modules/secure-dynamodb`: Secure DynamoDB table with encryption, backup, point-in-time recovery, deletion protection, and compliance features.
 - `modules/secure-rds`: Secure RDS instance with encryption, backup, monitoring, Performance Insights, deletion protection, and compliance features.
+- `modules/secure-eks`: Secure EKS cluster with encryption at rest, private endpoint access, audit logging, security groups, OIDC provider, and compliance features.
 - `modules/logging-bucket`: Hardened logging target bucket supporting SSE-S3 or SSE-KMS and optional retention.
 - `modules/logging-registry`: Resolves a logging bucket name for the current account and region from a JSON registry file.
 
@@ -391,6 +280,20 @@ terraform show -json tfplan > tfplan.json
 conftest test tfplan.json --policy ../policy
 ```
 
+### EKS Security Validation
+1) Generate a plan JSON:
+```bash
+cd examples/secure-eks
+terraform init
+terraform plan -out tfplan
+terraform show -json tfplan > tfplan.json
+```
+
+2) Validate with Conftest:
+```bash
+conftest test tfplan.json --policy ../policy
+```
+
 ### Direct OPA Evaluation
 ```bash
 # S3 policies
@@ -408,6 +311,10 @@ opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.dynamodb.security
 # RDS policies
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.rds.security.violations"
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.rds.security.allow"
+
+# EKS policies
+opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.eks.security.violations"
+opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.eks.security.allow"
 ```
 
 ### Testing with Sample Plans
@@ -429,6 +336,10 @@ opa eval -f pretty -d policy/rds_security.rego -i test-plans/rds/insecure/rds-in
 # Test KMS policy with sample plans
 opa eval -f pretty -d policy/kms_security.rego -i test-plans/kms/secure/kms-key-secure-plan.json "data.terraform.kms.security.allow"
 opa eval -f pretty -d policy/kms_security.rego -i test-plans/kms/insecure/kms-key-insecure-plan.json "data.terraform.kms.security.violations"
+
+# Test EKS policy with sample plans
+opa eval -f pretty -d policy/eks_security.rego -i test-plans/eks/secure/eks-cluster-secure-plan.json "data.terraform.eks.security.allow"
+opa eval -f pretty -d policy/eks_security.rego -i test-plans/eks/insecure/eks-cluster-insecure-plan.json "data.terraform.eks.security.violations"
 ```
 
 See `test-plans/README.md` for detailed information about the sample plans and expected results.
@@ -536,6 +447,8 @@ The custom Checkov policies provide comprehensive coverage:
 - **DynamoDB Policies (11)**: Encryption, backup, PITR, deletion protection, attributes
 - **RDS Policies (9)**: Encryption, backup, monitoring, deletion protection, Secrets Manager
 - **EKS Policies (16)**: Encryption, logging, endpoint access, node groups, security groups
+
+**Total: 57 Custom Checkov Policies**
 
 ### Testing Policy Validation
 
