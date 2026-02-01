@@ -2,21 +2,10 @@ locals {
   logging_bucket_name = var.logging_bucket_name
 }
 
-# KMS Key for S3 encryption
-# COMPLIANCE CONTROL MAPPINGS:
-# SOC 2 CC6.3: Data Transmission and Disposal - Encryption key management
-# SOC 2 CC6.7: Data Transmission and Disposal - Key rotation
-# PCI DSS 3.4: Render PAN unreadable - Encryption key management
-# PCI DSS 3.6.1: Key management - Key rotation
-# PCI DSS 3.6.2: Key management - Key lifecycle management
-# ISO 27001 A.13.2.1: Information transfer policies - Encryption key management
-# ISO 27001 A.13.2.3: Cryptographic controls - Key rotation
-# NIST CSF PR.DS-1: Data-at-rest protection - Encryption key management
-# NIST CSF PR.DS-2: Data-in-transit protection - Key management
 resource "aws_kms_key" "s3" {
   description             = "KMS key for encrypting S3 objects at rest"
-  deletion_window_in_days = var.kms_deletion_window_in_days  # SOC 2 CC6.3, PCI DSS 3.6.2, ISO 27001 A.13.2.1, NIST CSF PR.DS-1
-  enable_key_rotation     = true  # SOC 2 CC6.7, PCI DSS 3.6.1, ISO 27001 A.13.2.3, NIST CSF PR.DS-1
+  deletion_window_in_days = var.kms_deletion_window_in_days
+  enable_key_rotation     = true
   tags                    = merge(var.tags, { "Name" = "s3-kms" })
 }
 
@@ -31,23 +20,13 @@ resource "aws_s3_bucket" "logs" {
   tags          = merge(var.tags, { "Name" = local.logging_bucket_name, "Purpose" = "access-logs" })
 }
 
-# S3 Bucket Public Access Block for Logs Bucket
-# COMPLIANCE CONTROL MAPPINGS:
-# SOC 2 CC6.1: Logical and Physical Access Controls - Public access prevention
-# SOC 2 CC6.2: System Access Controls - Access restrictions
-# PCI DSS 1.2.1: Restrict inbound and outbound traffic - Public access blocking
-# PCI DSS 7.1: Restrict access to cardholder data - Public access prevention
-# ISO 27001 A.13.1.1: Network controls - Public access restrictions
-# ISO 27001 A.13.1.2: Network controls - Access control implementation
-# NIST CSF PR.AC-3: Remote access management - Public access controls
-# NIST CSF PR.AC-5: Network integrity - Access restrictions
 resource "aws_s3_bucket_public_access_block" "logs" {
   bucket = aws_s3_bucket.logs.id
 
-  block_public_acls       = true  # SOC 2 CC6.1, PCI DSS 1.2.1, ISO 27001 A.13.1.1, NIST CSF PR.AC-3
-  block_public_policy     = true  # SOC 2 CC6.1, PCI DSS 1.2.1, ISO 27001 A.13.1.1, NIST CSF PR.AC-3
-  ignore_public_acls      = true  # SOC 2 CC6.1, PCI DSS 1.2.1, ISO 27001 A.13.1.1, NIST CSF PR.AC-3
-  restrict_public_buckets = true  # SOC 2 CC6.1, PCI DSS 1.2.1, ISO 27001 A.13.1.1, NIST CSF PR.AC-3
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "logs" {

@@ -233,3 +233,4 @@ class S3BucketPolicyVPCEndpointRestriction(BaseResourceCheck):
             except (json.JSONDecodeError, TypeError):
                 pass
         return CheckResult.PASSED
+

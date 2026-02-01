@@ -157,3 +157,4 @@ class RDSSecurityGroupNoPublicAccess(BaseResourceCheck):
                     if "0.0.0.0/0" in cidr_blocks:
                         return CheckResult.FAILED
         return CheckResult.PASSED
+

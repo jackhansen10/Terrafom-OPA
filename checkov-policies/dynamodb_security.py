@@ -209,3 +209,4 @@ class DynamoDBTTLAttributeName(BaseResourceCheck):
                     else:
                         return CheckResult.FAILED
         return CheckResult.PASSED
+

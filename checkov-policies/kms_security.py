@@ -179,3 +179,4 @@ class CloudWatchLogGroupRetention(BaseResourceCheck):
             else:
                 return CheckResult.FAILED
         return CheckResult.FAILED
+

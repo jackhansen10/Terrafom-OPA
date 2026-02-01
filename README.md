@@ -1,10 +1,10 @@
-# Terraform Secure Infrastructure Templates
+# Terraform Secure S3 Bucket Templates
 
 **Author:** Jack Hansen  
 **License:** MIT License (see [LICENSE](LICENSE))  
 **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-This repository provides reusable Terraform modules for creating secure-by-default AWS infrastructure aligned with SOC 2, PCI DSS, ISO 27001, and NIST CSF best practices. Includes modules for S3, KMS, DynamoDB, RDS, and EKS with comprehensive security validation using OPA and Checkov policies.
+This repository provides a reusable Terraform module for creating a secure-by-default Amazon S3 bucket aligned with SOC 2, PCI DSS, ISO 27001, and NIST CSF best practices, plus an example to get started quickly.
 
 ## License & Attribution
 
@@ -19,7 +19,6 @@ This project is licensed under the MIT License. When using this code, please:
 - `modules/secure-kms-key/` – Reusable module with secure KMS key configuration
 - `modules/secure-dynamodb/` – Reusable module with secure DynamoDB configuration
 - `modules/secure-rds/` – Reusable module with secure RDS configuration
-- `modules/secure-eks/` – Reusable module with secure EKS cluster configuration
 - `modules/logging-bucket/` – Centralized logging bucket module
 - `modules/logging-registry/` – Registry for auto-selecting logging buckets
 - `examples/secure-s3-bucket/` – Example usage that can be applied directly
@@ -27,11 +26,6 @@ This project is licensed under the MIT License. When using this code, please:
 - `examples/secure-kms-key/` – Example KMS key usage
 - `examples/secure-dynamodb/` – Example DynamoDB usage
 - `examples/secure-rds/` – Example RDS usage
-- `examples/secure-eks/` – Example secure EKS cluster usage
-- `examples/insecure-eks/` – Example insecure EKS cluster for policy testing
-- `policy/` – OPA policies for security validation
-- `checkov-policies/` – Checkov policies for security validation
-- `test-plans/` – Sample Terraform plans for policy testing
 
 ## Quickstart
 
@@ -60,70 +54,62 @@ terraform plan
 terraform apply
 ```
 
-## How to Deploy Your Own Secure Infrastructure
+## How to Deploy Your Own Secure S3 Bucket
 
-### Option A: Use the included examples (recommended to start)
+### Option A: Use the included example (recommended to start)
 
 1. Ensure AWS credentials are configured (one of):
    - Environment vars: `AWS_PROFILE` or `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` (+ `AWS_SESSION_TOKEN` if using MFA)
    - Or `~/.aws/credentials` with a named profile
+2. In `examples/secure-s3-bucket`, set inputs via `terraform.tfvars` or CLI `-var` flags.
+3. Run `terraform init && terraform apply`.
+4. Outputs will show your bucket and KMS ARNs.
 
-2. Choose your service and navigate to the example directory:
-   - **S3**: `examples/secure-s3-bucket/`
-   - **KMS**: `examples/secure-kms-key/`
-   - **DynamoDB**: `examples/secure-dynamodb/`
-   - **RDS**: `examples/secure-rds/`
-   - **EKS**: `examples/secure-eks/`
+### Option B: Consume the module from another root
 
-3. Set inputs via `terraform.tfvars` or CLI `-var` flags, then run `terraform init && terraform apply`.
+Create a new directory (or use an existing Terraform root) and add:
 
-4. Outputs will show your resource ARNs and connection details.
-
-### Option B: Consume modules from another root
-
-Create a new directory (or use an existing Terraform root) and add the appropriate module:
-
-**S3 Bucket:**
 ```hcl
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+variable "aws_region" { type = string }
+
 module "secure_bucket" {
   source = "github.com/your-org/your-repo//modules/secure-s3-bucket?ref=v1.0.0"
-  # ... module configuration
+
+  bucket_name                     = var.bucket_name
+  logging_bucket_name             = var.logging_bucket_name
+  kms_key_alias                   = "alias/my-secure-bucket-kms"
+  restrict_to_vpc_endpoint_ids    = []
+
+  tags = {
+    Environment = "prod"
+    Owner       = "security"
+  }
 }
+
+variable "bucket_name" { type = string }
+variable "logging_bucket_name" { type = string }
 ```
 
-**KMS Key:**
-```hcl
-module "secure_kms" {
-  source = "github.com/your-org/your-repo//modules/secure-kms-key?ref=v1.0.0"
-  # ... module configuration
-}
-```
+Then run:
 
-**DynamoDB Table:**
-```hcl
-module "secure_dynamodb" {
-  source = "github.com/your-org/your-repo//modules/secure-dynamodb?ref=v1.0.0"
-  # ... module configuration
-}
+```bash
+terraform init
+terraform apply -var "aws_region=us-east-1" -var "bucket_name=my-unique-bucket" -var "logging_bucket_name=my-unique-bucket-logs"
 ```
-
-**RDS Instance:**
-```hcl
-module "secure_rds" {
-  source = "github.com/your-org/your-repo//modules/secure-rds?ref=v1.0.0"
-  # ... module configuration
-}
-```
-
-**EKS Cluster:**
-```hcl
-module "secure_eks" {
-  source = "github.com/your-org/your-repo//modules/secure-eks?ref=v1.0.0"
-  # ... module configuration
-}
-```
-
-Then run `terraform init && terraform apply` with appropriate variables.
 
 ### Passing variables
 
@@ -177,18 +163,6 @@ terraform destroy
 - Password management via AWS Secrets Manager
 - Secure networking with VPC and security groups
 
-### EKS Security
-- Encryption at rest using AWS KMS with key rotation
-- Private endpoint access with no public access
-- Complete audit logging (API, audit, authenticator, controller manager, scheduler)
-- Security groups with least privilege access
-- OIDC provider for IRSA (IAM Roles for Service Accounts)
-- AWS Load Balancer Controller integration
-- CloudWatch container insights for monitoring
-- Pod Security Standards and Network Policies
-- Resource quotas and proper scaling configurations
-- Latest supported Kubernetes versions
-
 See individual module READMEs for detailed control mapping to SOC 2, PCI DSS, ISO 27001, and NIST CSF.
 
 ## Centralized Logging
@@ -216,7 +190,6 @@ This will read `../../registry/logging-buckets.json` and automatically pass the 
 - `modules/secure-kms-key`: Secure KMS key with rotation, least-privilege policies, CloudTrail logging, and compliance features.
 - `modules/secure-dynamodb`: Secure DynamoDB table with encryption, backup, point-in-time recovery, deletion protection, and compliance features.
 - `modules/secure-rds`: Secure RDS instance with encryption, backup, monitoring, Performance Insights, deletion protection, and compliance features.
-- `modules/secure-eks`: Secure EKS cluster with encryption at rest, private endpoint access, audit logging, security groups, OIDC provider, and compliance features.
 - `modules/logging-bucket`: Hardened logging target bucket supporting SSE-S3 or SSE-KMS and optional retention.
 - `modules/logging-registry`: Resolves a logging bucket name for the current account and region from a JSON registry file.
 
@@ -280,20 +253,6 @@ terraform show -json tfplan > tfplan.json
 conftest test tfplan.json --policy ../policy
 ```
 
-### EKS Security Validation
-1) Generate a plan JSON:
-```bash
-cd examples/secure-eks
-terraform init
-terraform plan -out tfplan
-terraform show -json tfplan > tfplan.json
-```
-
-2) Validate with Conftest:
-```bash
-conftest test tfplan.json --policy ../policy
-```
-
 ### Direct OPA Evaluation
 ```bash
 # S3 policies
@@ -311,10 +270,6 @@ opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.dynamodb.security
 # RDS policies
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.rds.security.violations"
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.rds.security.allow"
-
-# EKS policies
-opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.eks.security.violations"
-opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.eks.security.allow"
 ```
 
 ### Testing with Sample Plans
@@ -336,173 +291,9 @@ opa eval -f pretty -d policy/rds_security.rego -i test-plans/rds/insecure/rds-in
 # Test KMS policy with sample plans
 opa eval -f pretty -d policy/kms_security.rego -i test-plans/kms/secure/kms-key-secure-plan.json "data.terraform.kms.security.allow"
 opa eval -f pretty -d policy/kms_security.rego -i test-plans/kms/insecure/kms-key-insecure-plan.json "data.terraform.kms.security.violations"
-
-# Test EKS policy with sample plans
-opa eval -f pretty -d policy/eks_security.rego -i test-plans/eks/secure/eks-cluster-secure-plan.json "data.terraform.eks.security.allow"
-opa eval -f pretty -d policy/eks_security.rego -i test-plans/eks/insecure/eks-cluster-insecure-plan.json "data.terraform.eks.security.violations"
 ```
 
 See `test-plans/README.md` for detailed information about the sample plans and expected results.
-
-## Checkov Policy Validation
-
-Checkov provides real-time security validation during development and integrates easily with CI/CD pipelines. This repository includes custom Checkov policies that mirror the OPA policies.
-
-### Installation
-
-Install Checkov using pipx (recommended):
-```bash
-# Install pipx if not already installed
-brew install pipx
-pipx ensurepath
-
-# Install Checkov
-pipx install checkov
-
-# Verify installation
-checkov --version
-```
-
-### Running Checkov Evaluations
-
-#### Basic Usage
-```bash
-# Run all custom policies against an example
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true
-
-# Run specific policy categories
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_S3_
-
-# Run with different output formats
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --output json --output-file-path results.json
-```
-
-#### Service-Specific Evaluations
-
-**S3 Security Validation:**
-```bash
-# Test secure S3 configuration
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_S3_
-
-# Test insecure S3 configuration (should show violations)
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_S3_
-```
-
-**KMS Security Validation:**
-```bash
-# Test secure KMS configuration
-checkov -d examples/secure-kms-key/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_KMS_
-```
-
-**DynamoDB Security Validation:**
-```bash
-# Test secure DynamoDB configuration
-checkov -d examples/secure-dynamodb/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_DYNAMODB_
-```
-
-**RDS Security Validation:**
-```bash
-# Test secure RDS configuration
-checkov -d examples/secure-rds/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_RDS_
-```
-
-**EKS Security Validation:**
-```bash
-# Test secure EKS configuration
-checkov -d examples/secure-eks/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_EKS_
-
-# Test insecure EKS configuration (should show violations)
-checkov -d examples/insecure-eks/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_EKS_
-```
-
-#### Advanced Usage
-
-**Run All Custom Policies:**
-```bash
-# Run all 57 custom policies across all services
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --run-all-external-checks
-```
-
-**CI/CD Integration:**
-```bash
-# Generate JUnit XML for CI/CD pipelines
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --output junitxml --output-file-path checkov-results.xml
-
-# Generate SARIF for GitHub Security tab
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --output sarif --output-file-path checkov-results.sarif
-```
-
-**Skip Specific Checks:**
-```bash
-# Skip specific policies if needed
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --skip-check CKV_AWS_S3_BUCKET_LOGGING_ENABLED
-```
-
-### Policy Coverage
-
-The custom Checkov policies provide comprehensive coverage:
-
-- **S3 Policies (12)**: Encryption, public access blocking, versioning, logging, policies
-- **KMS Policies (9)**: Key rotation, deletion windows, policies, aliases, logging
-- **DynamoDB Policies (11)**: Encryption, backup, PITR, deletion protection, attributes
-- **RDS Policies (9)**: Encryption, backup, monitoring, deletion protection, Secrets Manager
-- **EKS Policies (16)**: Encryption, logging, endpoint access, node groups, security groups
-
-**Total: 57 Custom Checkov Policies**
-
-### Testing Policy Validation
-
-Validate that policies work correctly:
-
-```bash
-# Test policy structure
-python3 checkov-policies/validate_policies.py
-
-# Test against secure configurations (should pass)
-checkov -d examples/secure-s3-bucket/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_S3_
-
-# Test against insecure configurations (should show violations)
-checkov -d examples/insecure-eks/ --framework terraform --external-checks-dir checkov-policies/ --download-external-modules true --check CKV_AWS_EKS_
-```
-
-### External Module Flag
-
-The `--download-external-modules true` flag is crucial for examples that use external Terraform modules (like `terraform-aws-modules/vpc/aws`). This flag:
-
-- Downloads external modules from the Terraform Registry
-- Analyzes the downloaded modules for security issues
-- Includes module resources in the security scan
-- Provides comprehensive coverage of the entire infrastructure
-
-### IDE Integration
-
-Checkov integrates with popular IDEs:
-
-- **VS Code**: Install the Checkov extension
-- **IntelliJ/PyCharm**: Install the Checkov plugin
-- **Vim/Neovim**: Use checkov.vim plugin
-
-### GitHub Actions Integration
-
-```yaml
-name: Security Validation
-on: [push, pull_request]
-
-jobs:
-  checkov:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@master
-        with:
-          directory: examples/secure-s3-bucket/
-          framework: terraform
-          external_checks_dir: checkov-policies/
-          download_external_modules: true
-          output_format: sarif
-          output_file_path: checkov-results.sarif
-```
 
 ## Troubleshooting
 
@@ -536,20 +327,3 @@ jobs:
 - Deletion protection: Disable deletion protection before destroying the instance, or use `terraform destroy -target` with caution.
 - Password management: When using Secrets Manager, retrieve passwords from AWS Secrets Manager console or CLI.
 - Performance Insights: Requires additional cost; disable if not needed for compliance.
-
-### EKS Issues
-- **Cluster name must be unique**: Adjust `cluster_name` if conflicts occur.
-- **Subnet configuration**: Ensure at least 2 subnets in different AZs for high availability.
-- **Security groups**: Verify security group rules allow appropriate cluster and node communication.
-- **Node group scaling**: Ensure `min_size` is at least 2 for high availability.
-- **External modules**: Use `--download-external-modules true` flag with Checkov for VPC module analysis.
-- **OIDC provider**: Ensure OIDC provider is created before using IRSA (IAM Roles for Service Accounts).
-- **Load balancer controller**: Install AWS Load Balancer Controller for production workloads.
-- **Pod Security Standards**: Configure appropriate security contexts for workloads.
-- **Network policies**: Implement network policies to restrict pod-to-pod communication.
-- **Helm provider**: Ensure Helm provider is properly configured for addon management.
-- **Kubernetes provider**: Configure Kubernetes provider with cluster endpoint and auth.
-- **VPC requirements**: EKS requires VPC with DNS support and hostnames enabled.
-- **IAM permissions**: Ensure sufficient permissions for EKS service role and node group role.
-- **Addon conflicts**: Some addons may conflict; use `resolve_conflicts` parameter if needed.
-- **PodSecurityPolicy deprecation**: Use Pod Security Standards for Kubernetes 1.21+ clusters.

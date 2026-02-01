@@ -113,3 +113,4 @@ module "secure_eks" {
 | node_groups | Map of node group information |
 | oidc_provider_arn | OIDC provider ARN for IRSA |
 | oidc_provider_url | OIDC provider URL for IRSA |
+
