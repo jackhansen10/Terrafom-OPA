@@ -19,6 +19,7 @@ This project is licensed under the MIT License. When using this code, please:
 - `modules/secure-kms-key/` – Reusable module with secure KMS key configuration
 - `modules/secure-dynamodb/` – Reusable module with secure DynamoDB configuration
 - `modules/secure-rds/` – Reusable module with secure RDS configuration
+- `modules/secure-cloudtrail/` – Reusable module with secure CloudTrail configuration
 - `modules/logging-bucket/` – Centralized logging bucket module
 - `modules/logging-registry/` – Registry for auto-selecting logging buckets
 - `examples/secure-s3-bucket/` – Example usage that can be applied directly
@@ -26,6 +27,7 @@ This project is licensed under the MIT License. When using this code, please:
 - `examples/secure-kms-key/` – Example KMS key usage
 - `examples/secure-dynamodb/` – Example DynamoDB usage
 - `examples/secure-rds/` – Example RDS usage
+- `examples/secure-cloudtrail/` – Example CloudTrail usage
 
 ## Quickstart
 
@@ -163,6 +165,13 @@ terraform destroy
 - Password management via AWS Secrets Manager
 - Secure networking with VPC and security groups
 
+### CloudTrail Security
+- Encrypted CloudTrail log storage using a customer-managed KMS key
+- Log file validation enabled by default
+- Multi-region trails with global service events
+- Optional CloudWatch Logs integration for monitoring
+- Hardened S3 bucket configuration for audit logs
+
 See individual module READMEs for detailed control mapping to SOC 2, PCI DSS, ISO 27001, and NIST CSF.
 
 ## Centralized Logging
@@ -190,6 +199,7 @@ This will read `../../registry/logging-buckets.json` and automatically pass the 
 - `modules/secure-kms-key`: Secure KMS key with rotation, least-privilege policies, CloudTrail logging, and compliance features.
 - `modules/secure-dynamodb`: Secure DynamoDB table with encryption, backup, point-in-time recovery, deletion protection, and compliance features.
 - `modules/secure-rds`: Secure RDS instance with encryption, backup, monitoring, Performance Insights, deletion protection, and compliance features.
+- `modules/secure-cloudtrail`: Secure CloudTrail trail with encrypted log storage, log validation, and optional CloudWatch Logs delivery.
 - `modules/logging-bucket`: Hardened logging target bucket supporting SSE-S3 or SSE-KMS and optional retention.
 - `modules/logging-registry`: Resolves a logging bucket name for the current account and region from a JSON registry file.
 
