@@ -37,7 +37,7 @@ opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.s3.security.viola
 opa eval -f pretty -d ../policy -i tfplan.json "data.terraform.s3.security.allow"
 ```
 
-- `violations` returns a list of messages. `allow` is true when there are zero violations.
+- `violations` returns a list of objects with `msg`, `suggestion`, and `resource`. `allow` is true when there are zero violations.
 
 ## What is checked
 
