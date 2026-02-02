@@ -115,18 +115,6 @@ resource "aws_resource" "example" {
 - ISO 27001 A.12.4.1: Event logging
 - NIST CSF DE.AE-1: Baseline network operations
 
-### CloudTrail
-
-**Monitoring & Logging:**
-- SOC 2 CC7.1: System Monitoring
-- SOC 2 CC7.2: Change detection
-- PCI DSS 10.1: Implement audit trails
-- PCI DSS 10.3: Record audit trail entries
-- ISO 27001 A.12.4.1: Event logging
-- ISO 27001 A.16.1.7: Evidence collection
-- NIST CSF DE.AE-1: Baseline network operations
-- NIST CSF DE.CM-1: Continuous monitoring
-
 ## Using Control Mappings for Audits
 
 ### For Compliance Personnel:
@@ -169,7 +157,6 @@ grep -r "NIST CSF PR.AC-3" modules/
 | KMS     | ✅    | ✅      | ✅        | ✅       | Complete |
 | DynamoDB| ✅    | ✅      | ✅        | ✅       | Complete |
 | RDS     | ✅    | ✅      | ✅        | ✅       | Complete |
-| CloudTrail | ✅ | ✅      | ✅        | ✅       | Complete |
 
 ## Contributing
 
